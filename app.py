@@ -112,6 +112,33 @@ def one_order(order_id):
             return "Заказ не найден"
         else:
             return jsonify(order.to_dict())
+    elif request.method == 'PUT':
+        order_data = json.loads(request.data)
+        order = db.session.query(Order).get(order_id)
+        month_start, day_start, year_start = [int(_) for _ in order['start_date'].split('/')]
+        month_end, day_end, year_end = [int(_) for _ in order['end_date'].split('/')]
+        if order is None:
+            return "Заказ не найден", 404
+        order.name = order_data['name']
+        order.description = order_data['description']
+        order.start_date = datetime.date(year=year_start, month=month_start, day=day_start)
+        order.end_date = datetime.date(year=int(year_end), month=int(month_end), day=int(day_end))
+        order.address = order_data['address']
+        order.price = order_data['price']
+        order.customer_id = order_data['customer_id']
+        order.executor_id = order_data['executor_id']
+        db.session.add(order)
+        db.session.commit()
+        db.session.close()
+        return f"Заказ с id {order_id} успешно изменён!", 200
+    elif request.method == 'DELETE':
+        order = db.session.query(Order).get(order_id)
+        if order is None:
+            return "Заказ не найден", 404
+        db.session.delete(order)
+        db.session.commit()
+        db.session.close()
+        return f"Заказ с id {order_id} успешно удалён!", 200
 
 
 @app.route('/offers', methods=['GET', 'POST'])
@@ -138,6 +165,25 @@ def one_offer(offer_id):
             return "Предложение не найдено"
         else:
             return jsonify(offer.to_dict())
+    elif request.method == 'PUT':
+        offer_data = json.loads(request.data)
+        offer = db.session.query(Offer).get(offer_id)
+        if offer is None:
+            return "Предложение не найдено", 404
+        offer.order_id = offer_data['order_id']
+        offer.executor = offer_data['executor']
+        db.session.add(offer)
+        db.session.commit()
+        db.session.close()
+        return f"Предложение с id {offer_id} успешно изменено!", 200
+    elif request.method == 'DELETE':
+        offer = db.session.query(Offer).get(offer_id)
+        if offer is None:
+            return "Предложение не найдено", 404
+        db.session.delete(offer)
+        db.session.commit()
+        db.session.close()
+        return f"Предложение с id {offer_id} успешно удалёно!", 200
 
 
 if __name__ == '__main__':
